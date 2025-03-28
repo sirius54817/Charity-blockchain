@@ -1,28 +1,32 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
-import App from './App';
 import './index.css';
-
-// Initialize Supabase with environment variables
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-console.log('Supabase URL:', process.env.REACT_APP_SUPABASE_URL);
-console.log('Supabase Key:', process.env.REACT_APP_SUPABASE_ANON_KEY);
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import App from './App';
+import { testConnection, createTestUser } from './utils/supabaseClient';
+import { BrowserRouter } from 'react-router-dom';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <App supabase={supabase} />
+      <App />
     </BrowserRouter>
   </React.StrictMode>
 );
+
+// Test connection on app start
+testConnection().then(connected => {
+  if (connected) {
+    console.log('Successfully connected to Supabase');
+    // Optionally create a test user
+    createTestUser().then(result => {
+      if (result.success) {
+        console.log('Test user created successfully');
+      } else {
+        console.error('Failed to create test user:', result.error);
+      }
+    });
+  } else {
+    console.error('Failed to connect to Supabase');
+  }
+});

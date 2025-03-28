@@ -3,61 +3,54 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
   return (
-    <nav className="bg-white shadow-lg">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center py-4">
-          <Link to="/" className="text-xl font-bold">
-            Charity Chain
+    <nav className="bg-blue-600 text-white p-4">
+      <div className="container mx-auto flex justify-between items-center">
+        <Link to="/" className="text-xl font-bold">
+          Donation App
+        </Link>
+        
+        <div className="flex space-x-4">
+          <Link to="/" className="hover:text-blue-200">
+            Home
           </Link>
-          <div className="flex items-center space-x-4">
-            {user ? (
-              <>
-                <Link to="/dashboard" className="hover:text-blue-600">
-                  Dashboard
-                </Link>
-                <Link to="/donate" className="hover:text-blue-600">
-                  Donate
-                </Link>
-                <Link to="/transactions" className="hover:text-blue-600">
-                  Transactions
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                >
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
+          
+          {user ? (
+            <>
+              <Link to="/dashboard" className="hover:text-blue-200">
+                Dashboard
+              </Link>
+              <Link to="/donate" className="hover:text-blue-200">
+                Donate
+              </Link>
+              <Link to="/transactions" className="hover:text-blue-200">
+                Transactions
+              </Link>
+              <button 
+                onClick={handleLogout}
+                className="hover:text-blue-200"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="hover:text-blue-200">
+                Login
+              </Link>
+              <Link to="/register" className="hover:text-blue-200">
+                Register
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>
