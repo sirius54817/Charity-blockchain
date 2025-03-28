@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import Web3 from 'web3';
 
 function DonationForm() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -15,6 +16,9 @@ function DonationForm() {
   const [ethRate, setEthRate] = useState(null);
   const [ethAmount, setEthAmount] = useState('0');
   const [loadingRate, setLoadingRate] = useState(false);
+  const [web3, setWeb3] = useState(null);
+  const [account, setAccount] = useState(null);
+  const [processing, setProcessing] = useState(false);
 
   // Predefined donation amounts
   const suggestedAmounts = [10, 25, 50, 100, 500, 1000];
@@ -88,6 +92,7 @@ function DonationForm() {
   useEffect(() => {
     fetchCharities();
     fetchEthPrice();
+    initializeWeb3();
   }, []);
 
   const fetchCharities = async () => {
@@ -123,27 +128,76 @@ function DonationForm() {
     }
   }, [amount, ethRate]);
 
-  const handleSubmit = async (e) => {
+  const initializeWeb3 = async () => {
+    if (window.ethereum) {
+      try {
+        // Request account access
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const web3Instance = new Web3(window.ethereum);
+        setWeb3(web3Instance);
+
+        // Get the user's account
+        const accounts = await web3Instance.eth.getAccounts();
+        setAccount(accounts[0]);
+
+      } catch (error) {
+        console.error("Error initializing Web3:", error);
+      }
+    } else {
+      console.error("Please install MetaMask!");
+    }
+  };
+
+  const handleDonation = async (e) => {
     e.preventDefault();
+    if (!web3 || !account) {
+      alert("Please connect your MetaMask wallet first!");
+      return;
+    }
+
+    setProcessing(true);
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/donations`, {
+      const selectedCharityData = predefinedCharities.find(c => c.id === selectedCharity);
+      if (!selectedCharityData) {
+        throw new Error("Please select a charity");
+      }
+
+      const ethAmountWei = web3.utils.toWei(ethAmount.toString(), 'ether');
+      
+      // Send ETH directly using web3
+      const receipt = await web3.eth.sendTransaction({
+        from: account,
+        to: selectedCharityData.ethAddress,
+        value: ethAmountWei,
+        gas: 300000
+      });
+
+      // Create transaction record
+      const transactionData = {
+        donor_id: user.id,
+        charity_id: selectedCharity,
+        amount: parseFloat(amount),
+        eth_amount: parseFloat(ethAmount),
+        status: 'completed',
+        message: message,
+        transaction_hash: receipt.transactionHash
+      };
+
+      // Save transaction to your backend
+      await fetch(`${process.env.REACT_APP_API_URL}/transactions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          donor_id: user.id,
-          charity_id: selectedCharity,
-          amount: parseFloat(amount),
-          message,
-        }),
+        body: JSON.stringify(transactionData),
       });
 
-      if (response.ok) {
-        navigate('/dashboard');
-      }
+      navigate('/transactions');
     } catch (error) {
-      console.error('Error making donation:', error);
+      console.error('Error processing donation:', error);
+      alert('Error processing donation. Please try again.');
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -230,7 +284,7 @@ function DonationForm() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleDonation} className="space-y-6">
             {/* Enhanced Charity Selection */}
             <motion.div
               whileHover={{ scale: 1.01 }}
@@ -371,11 +425,17 @@ function DonationForm() {
             {/* Submit Button */}
             <motion.button
               type="submit"
-              className="w-full bg-blue-600 text-white py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors duration-300"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              onClick={handleDonation}
+              disabled={processing}
+              className={`w-full ${
+                processing 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              } text-white py-4 rounded-lg text-lg font-semibold transition-colors duration-300`}
+              whileHover={{ scale: processing ? 1 : 1.02 }}
+              whileTap={{ scale: processing ? 1 : 0.98 }}
             >
-              Complete Donation
+              {processing ? 'Processing...' : 'Complete Donation'}
             </motion.button>
           </form>
         </motion.div>

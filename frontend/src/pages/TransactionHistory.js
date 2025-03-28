@@ -3,63 +3,29 @@ import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 
 function TransactionHistory() {
-  // Add this sample data
-  const sampleTransactions = [
-    {
-      id: 1,
-      charities: {
-        name: "Emergency Medical Relief"
-      },
-      amount: 250.00,
-      status: "completed",
-      transaction_hash: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
-    },
-    {
-      id: 2,
-      charities: {
-        name: "School Building Project"
-      },
-      amount: 500.00,
-      status: "pending",
-      transaction_hash: "0x901f35Aa7744B0642935c4b854Bc454e4438d12c"
-    },
-    {
-      id: 3,
-      charities: {
-        name: "Wildlife Conservation"
-      },
-      amount: 150.00,
-      status: "completed",
-      transaction_hash: "0xstu123Bb8855C0532925a3b844Bc454e4438f87d"
-    },
-    {
-      id: 4,
-      charities: {
-        name: "Ocean Cleanup Initiative"
-      },
-      amount: 300.00,
-      status: "completed",
-      transaction_hash: "0xdef456Dd9966D0532925a3b844Bc454e4438a45e"
-    },
-    {
-      id: 5,
-      charities: {
-        name: "Food Bank Support"
-      },
-      amount: 175.00,
-      status: "pending",
-      transaction_hash: "0xjkl789Ee2233E0532925a3b844Bc454e4438b98f"
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [user]);
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/transactions?user_id=${user.id}`
+      );
+      const data = await response.json();
+      setTransactions(data);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      setError('Failed to load transactions');
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  // Replace the existing useState and useEffect with this:
-  const [transactions] = useState(sampleTransactions);
-  const [loading] = useState(false);
-  const [error] = useState(null);
-
-  // Remove the fetchTransactions function since we're using static data
-
-  // Keep the existing conditional renders for loading and error states
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
