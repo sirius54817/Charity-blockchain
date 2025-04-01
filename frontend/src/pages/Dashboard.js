@@ -3,6 +3,45 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
+function TransactionHistory() {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        // Replace this with your actual API call
+        const response = await fetch('/api/transactions');
+        const data = await response.json();
+        setTransactions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setError(err.message);
+        setTransactions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+
+  if (loading) return <div>Loading transactions...</div>;
+  if (error) return <div>Error loading transactions: {error}</div>;
+  if (!transactions || transactions.length === 0) return <div>No transactions found</div>;
+
+  return (
+    <div>
+      {Array.isArray(transactions) && transactions.map((transaction, index) => (
+        <div key={transaction.id || index}>
+          {/* Your transaction display code here */}
+          <p>{transaction.description || 'Transaction details'}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Dashboard() {
   const { user, loading } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
