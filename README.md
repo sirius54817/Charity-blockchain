@@ -1,4 +1,4 @@
-# Cyberpunkz Project
+# Charity Blockchain Project
 
 This project is a full-stack application with a backend and frontend, designed for managing donations, charities, and user authentication. It includes smart contract integration for blockchain-based donations.
 
